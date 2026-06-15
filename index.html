@@ -1,66 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Blockbuster Oyunu</title>
+    <title>Block Blast Lite</title>
     <style>
-        body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
-        canvas { background: #000; border: 2px solid #fff; }
+        body { background: #2c3e50; display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif; }
+        #grid { display: grid; grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); gap: 2px; margin-top: 20px; }
+        .cell { width: 40px; height: 40px; background: #34495e; border-radius: 4px; }
+        .cell.filled { background: #3498db; }
+        #pieces { display: flex; gap: 20px; margin-top: 20px; }
+        .piece { width: 80px; height: 40px; background: #e74c3c; cursor: pointer; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <h1>Block Blast</h1>
+    <div id="grid"></div>
+    <div id="pieces">
+        <div class="piece" draggable="true" ondragstart="drag(event)"></div>
+    </div>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const grid = document.getElementById('grid');
+        let board = Array(8).fill().map(() => Array(8).fill(0));
 
-        let x = canvas.width / 2;
-        let y = canvas.height - 30;
-        let dx = 2;
-        let dy = -2;
-        let ballRadius = 10;
-        let paddleHeight = 10;
-        let paddleWidth = 75;
-        let paddleX = (canvas.width - paddleWidth) / 2;
-
-        function drawBall() {
-            ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
+        // Şəbəkəni yarat
+        for (let i = 0; i < 64; i++) {
+            let div = document.createElement('div');
+            div.className = 'cell';
+            div.dataset.index = i;
+            div.addEventListener('drop', drop);
+            div.addEventListener('dragover', (e) => e.preventDefault());
+            grid.appendChild(div);
         }
 
-        function drawPaddle() {
-            ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-        }
+        function drag(e) { e.dataTransfer.setData("text", e.target.id); }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBall();
-            drawPaddle();
+        function drop(e) {
+            e.preventDefault();
+            let index = parseInt(e.target.dataset.index);
+            let row = Math.floor(index / 8);
+            let col = index % 8;
 
-            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
-            if(y + dy < ballRadius) dy = -dy;
-            else if(y + dy > canvas.height - ballRadius) {
-                document.location.reload(); // Oyun bitəndə yenilə
+            if (board[row][col] === 0) {
+                board[row][col] = 1;
+                e.target.classList.add('filled');
+                checkLines();
             }
-
-            x += dx;
-            y += dy;
-            requestAnimationFrame(draw);
         }
 
-        document.addEventListener("mousemove", (e) => {
-            let relativeX = e.clientX - canvas.offsetLeft;
-            if(relativeX > 0 && relativeX < canvas.width) paddleX = relativeX - paddleWidth / 2;
-        });
+        function checkLines() {
+            // Sətirləri yoxla
+            for (let r = 0; r < 8; r++) {
+                if (board[r].every(c => c === 1)) {
+                    board[r] = Array(8).fill(0);
+                    updateGrid();
+                }
+            }
+        }
 
-        draw();
+        function updateGrid() {
+            let cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, i) => {
+                let r = Math.floor(i / 8);
+                let c = i % 8;
+                cell.className = board[r][c] === 1 ? 'cell filled' : 'cell';
+            });
+        }
     </script>
 </body>
 </html>
